@@ -376,15 +376,26 @@ int main(int argc, char **argv) {
     }
 
 
-    char buffer[file_size * sizeof(char)];
-    if(read(source_fd, buffer, file_size * sizeof(char)) < 0){
+    char buffer[file_size * sizeof(char) - 1];
+    int bytes_read;
+    if( ( bytes_read = read(source_fd, buffer, file_size * sizeof(char)) ) < 0){
 
         printf("Could not read file contents");
+        exit(-1);
 
     }
 
-    buffer[file_size - 1] = '\0'; // !!!
-    //puts(buffer);
+    if(bytes_read < file_size){
+
+        buffer[bytes_read] = '\0';
+
+    }
+    else{
+
+        buffer[file_size] = '\0';
+
+    }
+    //printf("%s", buffer);
     next_token(buffer);
 
 
