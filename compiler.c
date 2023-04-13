@@ -17,21 +17,18 @@ enum {
     COMMA, SEMICOLON, LPAR, RPAR, LBRACKET, RBRACKET, LACC, RACC,
     ADD, SUB, MUL, DIV, DOT, AND, OR, NOT,
     ASSIGN, EQUAL, NOTEQ, LESS, LESSEQ, GREATER, GREATEREQ
-
 }; // tokens codes
 
 
 
 char* token_names[]= {
-
     "ID", "END",
     "CT_INT", "CT_REAL", "CT_CHAR", "CT_STRING",
     "INT", "DOUBLE", "CHAR", "STRUCT", "VOID", "IF", "ELSE", "FOR", "WHILE", "BREAK", "RETURN",
     "COMMA", "SEMICOLON", "LPAR", "RPAR", "LBRACKET", "RBRACKET", "LACC", "RACC",
     "ADD", "SUB", "MUL", "DIV", "DOT", "AND", "OR", "NOT",
     "ASSIGN", "EQUAL", "NOTEQ", "LESS", "LESSEQ", "GREATER", "GREATEREQ"
-
-}; // tokens names
+}; // tokens names (used mainly for printing the lines and their tokens)
 
 
 
@@ -88,16 +85,8 @@ Token *add_token(int code) {
     tkn->line = line;
     tkn->next = NULL;
 
-    if (last_token) {
-
-        last_token->next = tkn;
-
-    }
-    else {
-
-        tokens = tkn;
-
-    }
+    if (last_token) last_token->next = tkn;
+    else tokens = tkn;
 
     last_token = tkn;
     return tkn;
@@ -120,14 +109,14 @@ void show_tokens() {
     Token *current = tokens;
     int curr_line = 0;
 
+
     while(current != NULL){
 
         if(curr_line != current->line && strcmp(token_names[current->code], "END") != 0) {
-
             printf("~Line #%i\n", current->line);
             curr_line = current->line;
-
         }
+
         if(strcmp(token_names[current->code], "END") != 0) printf("   %s", token_names[current->code]);
         else printf("END");
 
@@ -140,6 +129,7 @@ void show_tokens() {
                           break;
             case CT_REAL: printf(":%f", current->type.r);
                           break;
+
         }
 
         printf("\n");
@@ -166,168 +156,198 @@ int next_token(char *input) {
 
             case 0:
                 n_ch = 0;
-                if (isalpha(ch) || ch == '_') { // must begin with a letter or _
 
-                    start_ch = curr_ch; // memorizes the beginning of the ID
+                if (isalpha(ch) || ch == '_') { // must begin with a letter or _
+                    start_ch = curr_ch; // memorizes the beginning of the ID (if it's the case)
                     curr_ch++; // consume the character
                     state = 1; // set the new state
-
                 }
+
                 else if (ch == '=') {
+                    curr_ch++;
+                    ch = *curr_ch;
 
-                    //curr_ch++;
-                    state = 3;
-
+                    if (ch == '=') {
+                        curr_ch++;
+                        add_token(ASSIGN);
+                    }
+                    else add_token(EQUAL);
                 }
-                else if (ch == '('){
 
+                else if (ch == '(') {
                     add_token(LPAR);
                     curr_ch++;
-
                 }
-                else if (ch == ')'){
 
+                else if (ch == ')') {
                     add_token(RPAR);
                     curr_ch++;
-
                 }
-                else if (ch == '['){
 
+                else if (ch == '[') {
                     add_token(LBRACKET);
                     curr_ch++;
-
                 }
-                else if (ch == ']'){
 
+                else if (ch == ']') {
                     add_token(RBRACKET);
                     curr_ch++;
-
                 }
-                else if (ch == '{'){
 
+                else if (ch == '{') {
                     add_token(LACC);
                     curr_ch++;
-
                 }
-                else if (ch == '}'){
 
+                else if (ch == '}') {
                     add_token(RACC);
                     curr_ch++;
-
                 }
-                else if (ch == ';'){
 
+                else if (ch == ';') {
                     add_token(SEMICOLON);
                     curr_ch++;
-
                 }
-                else if (ch == ' ' || ch == '\r' || ch == '\t'){
 
+                else if (ch == '+') {
+                    add_token(ADD);
+                    curr_ch++;
+                }
+
+                else if (ch == '-') {
+                    add_token(SUB);
+                    curr_ch++;
+                }
+
+                else if (ch == '*') {
+                    add_token(MUL);
+                    curr_ch++;
+                }
+
+                else if (ch == '.') {
+                    add_token(DOT);
+                    curr_ch++;
+                }
+
+                else if (ch == '&') {
+                    curr_ch++;
+                    ch = *curr_ch;
+
+                    if (ch == '&') {
+                        curr_ch++;
+                        add_token(AND);
+                    }
+                    else token_err(tkn, "Expected binary operator\n");
+                }
+
+                else if (ch == '|') {
+                    curr_ch++;
+                    ch = *curr_ch;
+
+                    if (ch == '|') {
+                        curr_ch++;
+                        add_token(OR);
+                    }
+                    else token_err(tkn, "Expected binary operator\n");
+                }
+
+                else if (ch == '!') {
+                    curr_ch++;
+                    ch = *curr_ch;
+
+                    if (ch == '=') {
+                        curr_ch++;
+                        add_token(NOTEQ);
+                    }
+                    else add_token(NOT);
+                }
+
+                else if (ch == '<') {
+                    curr_ch++;
+                    ch = *curr_ch;
+
+                    if (ch == '=') {
+                        curr_ch++;
+                        add_token(LESSEQ);
+                    }
+                    else add_token(LESS);
+                }
+
+                else if (ch == '>') {
+                    curr_ch++;
+                    ch = *curr_ch;
+
+                    if (ch == '=') {
+                        curr_ch++;
+                        add_token(GREATEREQ);
+                    }
+                    else add_token(GREATER);
+                }
+
+                else if (ch == ' ' || ch == '\r' || ch == '\t')
                     curr_ch++; // consume the character and remains in state 0
 
-                }
-                else if (ch == '\n'){ // handled separately in order to update the current line
-
+                else if (ch == '\n') { // handled separately in order to update the current line
                     line++;
                     curr_ch++;
-
                 }
-                else if (ch == '\0'){ // the end of the input string
 
+                else if (ch == '\0') { // the end of the input string
                     add_token(END);
                     show_tokens();
                     return 0;
                 }
-                else if (ch >= '0' && ch <= '9'){
 
-                    state = 6; // handle CT_INT or CT_REAL at state 6
+                else if (ch >= '0' && ch <= '9') {
+                    state = 3; // handle CT_INT or CT_REAL at state 3
                     start_ch = curr_ch; // remember the beginning of number
                     curr_ch++;
-
                 }
-                else token_err(add_token(END),"invalid character");
+
+                else token_err(add_token(END), "invalid character");
                 break;
 
 
             case 1:
-                if (isalnum(ch) || ch == '_' ) curr_ch++; // after state 0, if we still have letters or digits
-                else state=2; // reached the end of ID
+                if (isalnum(ch) || ch == '_') curr_ch++; // after state 0, if we still have letters or digits
+                else state = 2; // reached the end of ID
                 break;
 
 
             case 2:
                 n_ch = curr_ch - start_ch; // the ID length
                 // keywords tests
-                if      (n_ch == 5 && !memcmp(start_ch,"break",5))    tkn = add_token(BREAK);
-                else if (n_ch == 4 && !memcmp(start_ch,"char",4))     tkn = add_token(CHAR);
-                else if (n_ch == 6 && !memcmp(start_ch,"double", 6))   tkn = add_token(DOUBLE);
-                else if (n_ch == 3 && !memcmp(start_ch,"int", 3))      { tkn = add_token(INT); curr_ch++; state = 0; }
-                else if (n_ch == 6 && !memcmp(start_ch,"struct", 6))   tkn = add_token(STRUCT);
-                else if (n_ch == 4 && !memcmp(start_ch,"void", 4))     tkn = add_token(VOID);
-                else if (n_ch == 2 && !memcmp(start_ch,"if", 2))       tkn = add_token(IF);
-                else if (n_ch == 4 && !memcmp(start_ch,"else", 4))     tkn = add_token(ELSE);
-                else if (n_ch == 5 && !memcmp(start_ch,"while", 5))    tkn = add_token(WHILE);
-                else if (n_ch == 3 && !memcmp(start_ch,"for", 3))      tkn = add_token(FOR);
-                else if (n_ch == 6 && !memcmp(start_ch,"return", 6))   { tkn = add_token(RETURN); curr_ch++; state = 0; }
+                if      (n_ch == 5 && !memcmp(start_ch, "break", 5))    { tkn = add_token(BREAK); curr_ch++; state = 0; }
+                else if (n_ch == 4 && !memcmp(start_ch, "char", 4))     { tkn = add_token(CHAR); curr_ch++; state = 0; }
+                else if (n_ch == 6 && !memcmp(start_ch, "double", 6))   { tkn = add_token(DOUBLE); curr_ch++; state = 0; }
+                else if (n_ch == 3 && !memcmp(start_ch, "int", 3))      { tkn = add_token(INT); curr_ch++; state = 0; }
+                else if (n_ch == 6 && !memcmp(start_ch, "struct", 6))   { tkn = add_token(STRUCT); curr_ch++; state = 0; }
+                else if (n_ch == 4 && !memcmp(start_ch, "void", 4))     { tkn = add_token(VOID); curr_ch++; state = 0; }
+                else if (n_ch == 2 && !memcmp(start_ch, "if", 2))       { tkn = add_token(IF); curr_ch++; state = 0; }
+                else if (n_ch == 4 && !memcmp(start_ch, "else", 4))     { tkn = add_token(ELSE); curr_ch++; state = 0; }
+                else if (n_ch == 5 && !memcmp(start_ch, "while", 5))    { tkn = add_token(WHILE); curr_ch++; state = 0; }
+                else if (n_ch == 3 && !memcmp(start_ch, "for", 3))      { tkn = add_token(FOR); curr_ch++; state = 0; }
+                else if (n_ch == 6 && !memcmp(start_ch, "return", 6))   { tkn = add_token(RETURN); curr_ch++; state = 0; }
 
-                else{ // if no keyword, then it is an ID
-
+                else { // if no keyword, then it sure is an ID
                     tkn = add_token(ID);
                     tkn->type.text = create_string(start_ch, curr_ch);
-                    //curr_ch++;
                     state = 0;
-
                 }
-                //return tkn->code;
                 break;
 
 
-            case 3: // handle case where we find a =
-                if (ch == '='){ // check whether it is an EQUAL or ASSIGN
-
-                    curr_ch++;
-                    state=4;
-
-                }
-                else state=5;
-                break;
-
-
-            case 4:
-                if(ch == '='){ // clearly ASSIGN
-
-                    state = 5;
-
-                }
-                else{
-
-                    add_token(EQUAL);
-                    state = 0;
-
-                }
-
-                //curr_ch++;
-                break;
-
-
-            case 5:
-                add_token(ASSIGN);
-                curr_ch++;
-                state = 0;
-                break;
-
-
-            case 6:
-                if (ch == ';' || ch == ',' || ch == ']'){ // reached the end of number ; build the number and add the SEMICOLON token
-
+            case 3:
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the SEMICOLON token
                     tkn = add_token(CT_INT);
                     tkn->type.i = strtol(start_ch, NULL,0);
+
                     if (ch == ';') add_token(SEMICOLON);
                     else if (ch == ',') add_token(COMMA);
-                    else add_token(RBRACKET);
-                    state = 0;
-                    //curr_ch++;
+                    else if (ch == ']') add_token(RBRACKET);
+                    else add_token(RPAR);
 
+                    state = 0;
                 }
                 curr_ch++;
 
@@ -340,72 +360,47 @@ int next_token(char *input) {
 
 
 
-
-
 int main(int argc, char **argv) {
 
     if (argc != 2){
-
         printf("Please provide a file name");
         exit(-1);
-
     }
 
 
     int source_fd = open(argv[1], O_RDONLY);
     if (source_fd < 0){
-
         printf("Could not open file");
         exit(-1);
-
     }
 
 
     struct stat st;
     int file_size;
     if(stat(argv[1], &st)){
-
         printf("Could not process file stats");
         exit(-1);
-
     }
-    else{
-
-        file_size = st.st_size;
-
-    }
+    else file_size = st.st_size;
 
 
     char buffer[file_size * sizeof(char) - 1];
     int bytes_read;
-    if( ( bytes_read = read(source_fd, buffer, file_size * sizeof(char)) ) < 0){
-
+    if( (bytes_read = read(source_fd, buffer, file_size * sizeof(char))) < 0 ){
         printf("Could not read file contents");
         exit(-1);
-
     }
 
-    if(bytes_read < file_size){
+    if(bytes_read < file_size)  buffer[bytes_read] = '\0';
+    else buffer[file_size] = '\0';
 
-        buffer[bytes_read] = '\0';
-
-    }
-    else{
-
-        buffer[file_size] = '\0';
-
-    }
     //printf("%s", buffer);
     next_token(buffer);
 
 
-
     if(close(source_fd) < 0){
-
         printf("Could not close file");
         exit(-1);
-
     }
-
 
 }

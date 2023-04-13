@@ -2,5 +2,10 @@ int main(){
 
     int speed=70, height = 50;
     int arr [ 50];
-
+    if (!height && arr[0] <= 5 ){
+        speed=100;
+    }
+    while (n!=10){
+        height = height+1;
+    }
 }
