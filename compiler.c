@@ -227,6 +227,9 @@ int next_token(char *input) {
                 else if (ch == '.') {
                     add_token(DOT);
                     curr_ch++;
+
+                    // checking for numbers like ".123" -> yield an error message
+                    if (isdigit(curr_ch[0])) token_err(tkn, "Invalid real number format");
                 }
 
                 else if (ch == '&') {
@@ -340,24 +343,88 @@ int next_token(char *input) {
             case 3:
                 if (start_ch[0] == '0'){
                     if(ch == 'x' || ch == 'X') { state = 4; curr_ch++; break; } // handle hexadecimal CT_INTs in state 4
-                    else if (ch >= '0' && ch < '8') { state = 5; break; } // handle octal CT_INTs in state 5
+                    else if (ch >= '0' && ch <= '7') { state = 5; break; } // handle octal CT_INTs in state 5
                     else if (ch == '8' || ch == '9') token_err(tkn, "Invalid octal format"); // it reached a character from an octal number which happens to start with 8
-                    else if (ch == '.') { state = 6; curr_ch++; break; } // if we encounter a real number of the format 0.
+                    else if (ch == '.') { state = 6; curr_ch++; break; } // if we encounter a real number of the format "0."
                 }
 
-                else if (ch == '.'){ // handle CT_REALs in state 6
+                else if (ch == 'e' || ch =='E'){ // if we encounter a real number of the format "[0-9]+ E (+|-)? [0-9]+" (2E+01, for example)
+                                                 // (after flushing the first digit)
+                                                 // a CT_REAL case to be handled in state 8
+                    state = 8;
                     curr_ch++;
-                    state = 6;
                     break;
                 }
 
-                if (start_ch[0] >='0' && start_ch[0] <= '9' && ch == '='){ // handle case where we could have a variable which starts with a number... not acceptable!
+                else if (ch == '.'){ // handle CT_REALs in state 6
+                    state = 6;
+                    curr_ch++;
+                    break;
+                }
+
+                if (isdigit(start_ch[0]) && ch == '='){ // handle case where we could have a variable which starts with a number... not acceptable!
                     token_err(tkn, "A variable must not start with a number!!");
                 }
 
+                // this is where we compute our CT_INTs
                 if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
                     tkn = add_token(CT_INT);
                     tkn->type.i = strtol(start_ch, NULL,0);
+
+                    if (ch == ';') add_token(SEMICOLON);
+                    else if (ch == ',') add_token(COMMA);
+                    else if (ch == ']') add_token(RBRACKET);
+                    else add_token(RPAR);
+
+                    // if we encounter the format "0x"
+                    if ( (curr_ch - start_ch <= 2) && (start_ch[1] == 'x' || start_ch[1] == 'X') ) token_err(tkn, "Invalid hexadecimal format");
+
+                    state = 0;
+                }
+                curr_ch++;
+                break;
+
+
+            case 4: // hexadecimal
+                if ( (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') ) curr_ch++;
+                else if ( (ch >= 'g' && ch <= 'z') || (ch >= 'G' && ch <= 'Z') ) token_err(tkn, "Invalid hexadecimal format");
+                else state = 3;
+                break;
+
+
+            case 5: // octal
+                if (ch >= '0' && ch <= '7') curr_ch++;
+                else if ( ch == '8' || ch == '9') token_err(tkn, "Invalid octal format");
+                else state = 3;
+                break;
+
+
+                //CT_REAL cases
+            case 6:
+                if (ch >= '0' && ch <= '9') { curr_ch++; state = 7; }
+                else token_err(tkn, "Invalid real number format");
+                break;
+
+            case 7:
+                if (ch >= '0' && ch <= '9') { curr_ch++; state = 7; }
+                else if (ch == 'e' || ch =='E') { curr_ch++; state = 8; }
+                else state = 10; // 123.67
+                break;
+
+            case 8: // it will jump to the state where we check the digit after E anyway
+                if (ch == '+' || ch =='-')  curr_ch++;
+                state = 9;
+                break;
+
+            case 9: // we encountered a real number of the form "123.67E(+/-)8"
+                if (ch >= '0' && ch <= '9') { curr_ch++; state = 10; }
+                else token_err(tkn, "Invalid real number format");
+                break;
+
+            case 10: // this is where we compute CT_REAL
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
+                    tkn = add_token(CT_REAL);
+                    tkn->type.r = strtod(start_ch, NULL);
 
                     if (ch == ';') add_token(SEMICOLON);
                     else if (ch == ',') add_token(COMMA);
@@ -369,18 +436,6 @@ int next_token(char *input) {
                 curr_ch++;
                 break;
 
-
-            case 4:
-                if ( (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') ) curr_ch++;
-                else if ( (ch >= 'g' && ch <= 'z') || (ch >= 'G' && ch <= 'Z') ) token_err(tkn, "Invalid hexadecimal format");
-                else state = 3;
-                break;
-
-            case 5:
-                if (ch >= '0' && ch < '8') curr_ch++;
-                else if ( ch == '8' || ch == '9') token_err(tkn, "Invalid octal format");
-                else state = 3;
-                break;
         }
 
     }
