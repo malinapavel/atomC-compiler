@@ -1,6 +1,6 @@
 int main(){
 
-    int speed=70, height = 50;
+    int speed=0xAFd9, height = 017, i= 75, j =0;
     int arr [ 50];
     if (!height && arr[0] <= 5 ){
         speed=100;

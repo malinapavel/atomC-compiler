@@ -299,12 +299,12 @@ int next_token(char *input) {
                 }
 
                 else if (ch >= '0' && ch <= '9') {
-                    state = 3; // handle CT_INT or CT_REAL at state 3
+                    state = 3; // anything that could be a potential CT_INT or CT_REAL is passed in state 3
                     start_ch = curr_ch; // remember the beginning of number
                     curr_ch++;
                 }
 
-                else token_err(add_token(END), "invalid character");
+                else token_err(add_token(END), "Invalid character");
                 break;
 
 
@@ -338,7 +338,24 @@ int next_token(char *input) {
 
 
             case 3:
-                if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the SEMICOLON token
+                if (start_ch[0] == '0'){
+                    if(ch == 'x' || ch == 'X') { state = 4; curr_ch++; break; } // handle hexadecimal CT_INTs in state 4
+                    else if (ch >= '0' && ch < '8') { state = 5; break; } // handle octal CT_INTs in state 5
+                    else if (ch == '8' || ch == '9') token_err(tkn, "Invalid octal format"); // it reached a character from an octal number which happens to start with 8
+                    else if (ch == '.') { state = 6; curr_ch++; break; } // if we encounter a real number of the format 0.
+                }
+
+                else if (ch == '.'){ // handle CT_REALs in state 6
+                    curr_ch++;
+                    state = 6;
+                    break;
+                }
+
+                if (start_ch[0] >='0' && start_ch[0] <= '9' && ch == '='){ // handle case where we could have a variable which starts with a number... not acceptable!
+                    token_err(tkn, "A variable must not start with a number!!");
+                }
+
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
                     tkn = add_token(CT_INT);
                     tkn->type.i = strtol(start_ch, NULL,0);
 
@@ -350,7 +367,20 @@ int next_token(char *input) {
                     state = 0;
                 }
                 curr_ch++;
+                break;
 
+
+            case 4:
+                if ( (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') ) curr_ch++;
+                else if ( (ch >= 'g' && ch <= 'z') || (ch >= 'G' && ch <= 'Z') ) token_err(tkn, "Invalid hexadecimal format");
+                else state = 3;
+                break;
+
+            case 5:
+                if (ch >= '0' && ch < '8') curr_ch++;
+                else if ( ch == '8' || ch == '9') token_err(tkn, "Invalid octal format");
+                else state = 3;
+                break;
         }
 
     }
