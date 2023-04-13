@@ -1,0 +1,6 @@
+int main(){
+
+    int speed=70, height = 50;
+    int arr [ 50];
+
+}
