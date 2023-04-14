@@ -392,10 +392,11 @@ int next_token(char *input) {
                 }
 
                 // handle case where we could have a variable which starts with a number... not acceptable!
-                if (isdigit(start_ch[0]) && ch == '=')  token_err(tkn, "A variable must not start with a number!!");
+                //if (isdigit(start_ch[0]) && ch == '=')  token_err(tkn, "A variable must not start with a number!!");
 
                 // this is where we compute our CT_INTs
-                if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')' || ch == '=' || ch == '&' || ch == '|' || ch == '!' || ch == '+' || ch == '-' || ch == '*' || ch == '/'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
+                                                                                    // case when we have an assignment ==
                     tkn = add_token(CT_INT);
                     tkn->type.i = strtol(start_ch, NULL,0);
 
@@ -403,6 +404,26 @@ int next_token(char *input) {
                     else if (ch == ',') add_token(COMMA);
                     else if (ch == ']') add_token(RBRACKET);
                     else if (ch == ')') add_token(RPAR);
+                    else if (ch == '+') add_token(ADD);
+                    else if (ch == '-') add_token(SUB);
+                    else if (ch == '*') add_token(MUL);
+                    else if (ch == '/') add_token(DIV);
+                    else if (ch == '='){
+                        curr_ch++;
+                        if (curr_ch[0] == '=') add_token(ASSIGN);
+                    }
+                    else if (ch == '&'){
+                        curr_ch++;
+                        if (curr_ch[0] == '&') add_token(AND);
+                    }
+                    else if (ch == '|'){
+                        curr_ch++;
+                        if (curr_ch[0] == '|') add_token(OR);
+                    }
+                    else if (ch == '!'){
+                        curr_ch++;
+                        if (curr_ch[0] == '=') add_token(NOTEQ);
+                    }
 
                     // if we encounter the format "0x"
                     if ( (curr_ch - start_ch <= 2) && (start_ch[1] == 'x' || start_ch[1] == 'X') )  token_err(tkn, "Invalid hexadecimal format");
@@ -416,6 +437,7 @@ int next_token(char *input) {
             case 4: // hexadecimal
                 if ( (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F') ) curr_ch++;
                 else if ( (ch >= 'g' && ch <= 'z') || (ch >= 'G' && ch <= 'Z') ) token_err(tkn, "Invalid hexadecimal format");
+                else if ( ch == ' ')  curr_ch++;
                 else state = 3;
                 break;
 
@@ -423,6 +445,7 @@ int next_token(char *input) {
             case 5: // octal
                 if (ch >= '0' && ch <= '7') curr_ch++;
                 else if ( ch == '8' || ch == '9') token_err(tkn, "Invalid octal format");
+                else if ( ch == ' ')  curr_ch++;
                 else state = 3;
                 break;
 
@@ -455,14 +478,34 @@ int next_token(char *input) {
 
 
             case 10: // this is where we compute CT_REAL
-                if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')' || ch == '=' || ch == '&' || ch == '|' || ch == '!' || ch == '+' || ch == '-' || ch == '*' || ch == '/'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
                     tkn = add_token(CT_REAL);
                     tkn->type.r = strtod(start_ch, NULL);
 
                     if (ch == ';') add_token(SEMICOLON);
                     else if (ch == ',') add_token(COMMA);
                     else if (ch == ']') add_token(RBRACKET);
-                    else add_token(RPAR);
+                    else if (ch == ')') add_token(RPAR);
+                    else if (ch == '+') add_token(ADD);
+                    else if (ch == '-') add_token(SUB);
+                    else if (ch == '*') add_token(MUL);
+                    else if (ch == '/') add_token(DIV);
+                    else if (ch == '='){
+                        curr_ch++;
+                        if (curr_ch[0] == '=') add_token(ASSIGN);
+                    }
+                    else if (ch == '&'){
+                        curr_ch++;
+                        if (curr_ch[0] == '&') add_token(AND);
+                    }
+                    else if (ch == '|'){
+                        curr_ch++;
+                        if (curr_ch[0] == '|') add_token(OR);
+                    }
+                    else if (ch == '!'){
+                        curr_ch++;
+                        if (curr_ch[0] == '=') add_token(NOTEQ);
+                    }
 
                     state = 0;
                 }
@@ -513,7 +556,7 @@ int next_token(char *input) {
                     curr_ch++;
                     state = 0;
                 }
-                else token_err(tkn, "Expected character");
+                //else token_err(tkn, "Expected character");
                 break;
 
 
@@ -527,7 +570,7 @@ int next_token(char *input) {
 
 
             case 16:
-                if(strchr("abfnrtv'?\"\\0", ch)) { curr_ch++; state = 14; }
+                if(strchr("abfnrtv'?\"\\0", ch)) { curr_ch++; state = 19; }
                 else token_err(tkn, "Expected a character from [abfnrtv'?\"\\\\0]");
                 break;
 
@@ -557,7 +600,13 @@ int next_token(char *input) {
                     curr_ch++;
                     state = 0;
                 }
-                else token_err(tkn, "Expected character");
+                //else token_err(tkn, "Expected character");
+                else if (ch == '\\') {
+                    curr_ch++;
+                    ch = *curr_ch;
+                    if (ch == '\"') { curr_ch++ ; state = 18; }
+                }
+                else {curr_ch++ ; state = 18; }
                 break;
 
 
