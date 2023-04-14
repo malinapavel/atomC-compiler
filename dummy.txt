@@ -3,6 +3,7 @@ int main(){
     int speed=0xAFd9, height = 017, j =0x4;
     double i= 75.32E+02;
     char x = 'a', y='\n';
+    char aux[10] = "hey";
     int arr [ 50];
     if (!height && arr[0] <= 5 ){
         speed= speed / 100;

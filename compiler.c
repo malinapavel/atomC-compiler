@@ -35,8 +35,8 @@ char* token_names[]= {
 typedef struct _Token {
     int code; // code (name)
     union {
-        char *text; // used for ID, CT_STRING (dynamically allocated)
-        long int i; // used for INT, CT_INT, CT_CHAR
+        char *text; // used for ID, CT_CHAR, CT_STRING (dynamically allocated)
+        long int i; // used for INT, CT_INT
         double r; // used for DOUBLE, CT_REAL
     } type;
     int line; // the input file line
@@ -126,12 +126,14 @@ void show_tokens() {
         switch(current->code) {
 
             case ID:
-            case CT_CHAR: printf(":%s", current->type.text);
-                          break;
-            case CT_INT:  printf(":%li",current->type.i);
-                          break;
-            case CT_REAL: printf(":%f", current->type.r);
-                          break;
+            case CT_CHAR:   printf(":%s", current->type.text);
+                            break;
+            case CT_STRING: printf(":%s", current->type.text);
+                            break;
+            case CT_INT:    printf(":%li",current->type.i);
+                            break;
+            case CT_REAL:   printf(":%f", current->type.r);
+                            break;
 
         }
 
@@ -159,6 +161,7 @@ int next_token(char *input) {
         switch (state) {
 
             case 0:
+                start_ch = curr_ch;
                 n_ch = 0;
 
                 if (isalpha(ch) || ch == '_') { // must begin with a letter or _
@@ -472,8 +475,8 @@ int next_token(char *input) {
 // ~~~~~~~~ CT_CHAR
 
             case 11:
-                if (ch == '\\') { curr_ch++; state = 12; }
-                else state = 13;
+                if (ch == '\\') { curr_ch++; state = 12; } // we have a character like '\n', we entered the ESC case -> go in state 12 to check it out
+                else state = 13; // we have a character like 'a', handle that in state 13
                 break;
 
 
@@ -485,22 +488,23 @@ int next_token(char *input) {
 
             case 13:
                 if (ch != '\'' || ch != '\\') { curr_ch++; state = 14;}
+                else token_err(tkn, "Invalid char format");
                 break;
 
 
             case 14:
-                if(ch == '\''){
+                if(ch == '\''){ // end of character
 
                     tkn = add_token(CT_CHAR);
 
                       char aux[2] = {0};
-                      if ((curr_ch-2)[0] == '\\'){
+                      if ((curr_ch-2)[0] == '\\'){ // for '\\' [abfnrtv'?"\\0] cases
                           aux[0] = (curr_ch - 2)[0];
                           aux[1] = (curr_ch - 2)[1];
                           aux[2] = '\0';
                           //printf("%s\n", aux);
                       }
-                      else if (isalpha((curr_ch-1)[0]))
+                      else if (isalpha((curr_ch-1)[0])) // for 'any_other_character' cases
                       {
                           aux[0] = (curr_ch - 1)[0];
                           aux[1] = '\0';
@@ -508,7 +512,50 @@ int next_token(char *input) {
                           //printf("%s\n", aux);
                       }
 
-                    tkn->type.text = strdup(aux);
+                    tkn->type.text = strdup(aux); // allocate memory for aux string and store it as text for the CT_CHAR token
+
+                    curr_ch++;
+                    state = 0;
+                }
+                else token_err(tkn, "Expected character");
+                break;
+
+
+
+// ~~~~~~~ CT_STRING
+
+            case 15:
+                if (ch == '\\') { curr_ch++; state = 16; } // we have a string like "\n", we entered the ESC case -> go in state 16 to check it out
+                else state = 17; // we have a string like "abc", handle that in state 17
+                break;
+
+
+            case 16:
+                if(strchr("abfnrtv'?\"\\0", ch)) { curr_ch++; state = 14; }
+                else token_err(tkn, "Expected a character from [abfnrtv'?\"\\\\0]");
+                break;
+
+
+            case 17:
+                if (ch != '\"' || ch != '\\') { curr_ch++; state = 18; }
+                else token_err(tkn, "Invalid char format");
+                break;
+
+            case 18: // if we still have some characters in the string before reaching the \"
+                if (isalpha(ch)) curr_ch++;
+                else state = 19;
+                break;
+
+            case 19:
+                if(ch == '\"'){ // end of string
+
+                    tkn = add_token(CT_STRING);
+
+                    char *aux;
+                    //printf("%s --- %s", start_ch+1, curr_ch);
+                    aux = create_string(start_ch + 1, curr_ch);
+                    aux[strlen(aux)] = '\0';
+                    tkn->type.text = strdup(aux); // allocate memory for aux string and store it as text for the CT_STRING token
 
                     curr_ch++;
                     state = 0;
