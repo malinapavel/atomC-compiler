@@ -2,23 +2,8 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <sys/stat.h>
-#include <fcntl.h>
 #include <ctype.h>
-
-#define SAFEALLOC(var, Type) if ((var = (Type*)malloc(sizeof(Type))) == NULL) err("not enough memory");
-
-
-
-enum {
-    ID, END,
-    CT_INT, CT_REAL, CT_CHAR, CT_STRING,
-    INT, DOUBLE, CHAR, STRUCT, VOID, IF, ELSE, FOR, WHILE, BREAK, RETURN,
-    COMMA, SEMICOLON, LPAR, RPAR, LBRACKET, RBRACKET, LACC, RACC,
-    ADD, SUB, MUL, DIV, DOT, AND, OR, NOT,
-    ASSIGN, EQUAL, NOTEQ, LESS, LESSEQ, GREATER, GREATEREQ
-}; // tokens codes
-
+#include "library_compiler.h"
 
 
 char* token_names[]= {
@@ -30,18 +15,6 @@ char* token_names[]= {
     "ASSIGN", "EQUAL", "NOTEQ", "LESS", "LESSEQ", "GREATER", "GREATEREQ"
 }; // tokens names (used mainly for printing the lines and their tokens)
 
-
-
-typedef struct _Token {
-    int code; // code (name)
-    union {
-        char *text; // used for ID, CT_CHAR, CT_STRING (dynamically allocated)
-        long int i; // used for INT, CT_INT
-        double r; // used for DOUBLE, CT_REAL
-    } type;
-    int line; // the input file line
-    struct _Token *next; // link to the next token
-} Token;
 
 
 
@@ -645,50 +618,3 @@ int next_token(char *input) {
 
 }
 
-
-
-
-int main(int argc, char **argv) {
-
-    if (argc != 2){
-        printf("Please provide a file name");
-        exit(-1);
-    }
-
-
-    int source_fd = open(argv[1], O_RDONLY);
-    if (source_fd < 0){
-        printf("Could not open file");
-        exit(-1);
-    }
-
-
-    struct stat st;
-    int file_size;
-    if(stat(argv[1], &st)){
-        printf("Could not process file stats");
-        exit(-1);
-    }
-    else file_size = st.st_size;
-
-
-    char buffer[file_size * sizeof(char) - 1];
-    int bytes_read;
-    if( (bytes_read = read(source_fd, buffer, file_size * sizeof(char))) < 0 ){
-        printf("Could not read file contents");
-        exit(-1);
-    }
-
-    if(bytes_read < file_size)  buffer[bytes_read] = '\0';
-    else buffer[file_size] = '\0';
-
-    //printf("%s", buffer);
-    next_token(buffer);
-
-
-    if(close(source_fd) < 0){
-        printf("Could not close file");
-        exit(-1);
-    }
-
-}

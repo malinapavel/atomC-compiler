@@ -49,8 +49,14 @@ cmake_ninja_workdir = D$:/LabCT/cmake-build-debug/
 
 build cmake_object_order_depends_target_LabCT: phony || CMakeFiles/LabCT.dir
 
-build CMakeFiles/LabCT.dir/compiler.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/compiler.c || cmake_object_order_depends_target_LabCT
-  DEP_FILE = CMakeFiles\LabCT.dir\compiler.c.obj.d
+build CMakeFiles/LabCT.dir/main.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/main.c || cmake_object_order_depends_target_LabCT
+  DEP_FILE = CMakeFiles\LabCT.dir\main.c.obj.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles\LabCT.dir
+  OBJECT_FILE_DIR = CMakeFiles\LabCT.dir
+
+build CMakeFiles/LabCT.dir/lexical.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/lexical.c || cmake_object_order_depends_target_LabCT
+  DEP_FILE = CMakeFiles\LabCT.dir\lexical.c.obj.d
   FLAGS = -g -fdiagnostics-color=always -std=gnu11
   OBJECT_DIR = CMakeFiles\LabCT.dir
   OBJECT_FILE_DIR = CMakeFiles\LabCT.dir
@@ -63,7 +69,7 @@ build CMakeFiles/LabCT.dir/compiler.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/com
 #############################################
 # Link the executable LabCT.exe
 
-build LabCT.exe: C_EXECUTABLE_LINKER__LabCT_Debug CMakeFiles/LabCT.dir/compiler.c.obj
+build LabCT.exe: C_EXECUTABLE_LINKER__LabCT_Debug CMakeFiles/LabCT.dir/main.c.obj CMakeFiles/LabCT.dir/lexical.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LabCT.dir
