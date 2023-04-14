@@ -64,6 +64,7 @@ void err(const char *fmt, ...) {
 }
 
 
+
 void token_err(const Token *tk, const char *fmt, ...) {
 
     va_list va;
@@ -75,6 +76,7 @@ void token_err(const Token *tk, const char *fmt, ...) {
     exit(-1);
 
 }
+
 
 
 Token *add_token(int code) {
@@ -92,6 +94,7 @@ Token *add_token(int code) {
     return tkn;
 
 }
+
 
 
 char* create_string(const char* start, const char* end) {
@@ -138,6 +141,7 @@ void show_tokens() {
     }
 
 }
+
 
 
 int next_token(char *input) {
@@ -204,6 +208,11 @@ int next_token(char *input) {
                     curr_ch++;
                 }
 
+                else if(ch == ','){
+                    curr_ch++;
+                    add_token(COMMA);
+                }
+
                 else if (ch == ';') {
                     add_token(SEMICOLON);
                     curr_ch++;
@@ -222,6 +231,21 @@ int next_token(char *input) {
                 else if (ch == '*') {
                     add_token(MUL);
                     curr_ch++;
+                }
+
+                else if(ch == '/') {
+                    curr_ch++;
+                    state = 20;
+                }
+
+                else if(ch == '\'') {
+                    curr_ch++;
+                    state = 11;
+                }
+
+                else if(ch == '\"') {
+                    curr_ch++;
+                    state = 15;
                 }
 
                 else if (ch == '.') {
@@ -310,6 +334,7 @@ int next_token(char *input) {
                 else token_err(add_token(END), "Invalid character");
                 break;
 
+// ~~~~~~~~ ID
 
             case 1:
                 if (isalnum(ch) || ch == '_') curr_ch++; // after state 0, if we still have letters or digits
@@ -340,7 +365,9 @@ int next_token(char *input) {
                 break;
 
 
-            case 3:
+// ~~~~~~~~ CT_INT numbers (+separating them from the HEXA/OCTAL INTs AND CT_REAL NUMBERS)
+
+            case 3: // after flushing the first digit
                 if (start_ch[0] == '0'){
                     if(ch == 'x' || ch == 'X') { state = 4; curr_ch++; break; } // handle hexadecimal CT_INTs in state 4
                     else if (ch >= '0' && ch <= '7') { state = 5; break; } // handle octal CT_INTs in state 5
@@ -349,8 +376,7 @@ int next_token(char *input) {
                 }
 
                 else if (ch == 'e' || ch =='E'){ // if we encounter a real number of the format "[0-9]+ E (+|-)? [0-9]+" (2E+01, for example)
-                                                 // (after flushing the first digit)
-                                                 // a CT_REAL case to be handled in state 8
+                                                 // a CT_REAL case to be handled directly in state 8
                     state = 8;
                     curr_ch++;
                     break;
@@ -362,7 +388,8 @@ int next_token(char *input) {
                     break;
                 }
 
-                if (isdigit(start_ch[0]) && ch == '='){ // handle case where we could have a variable which starts with a number... not acceptable!
+                // handle case where we could have a variable which starts with a number... not acceptable!
+                if (isdigit(start_ch[0]) && ch == '='){
                     token_err(tkn, "A variable must not start with a number!!");
                 }
 
@@ -399,11 +426,13 @@ int next_token(char *input) {
                 break;
 
 
-                //CT_REAL cases
+// ~~~~~~~~ CT_REAL
+
             case 6:
                 if (ch >= '0' && ch <= '9') { curr_ch++; state = 7; }
                 else token_err(tkn, "Invalid real number format");
                 break;
+
 
             case 7:
                 if (ch >= '0' && ch <= '9') { curr_ch++; state = 7; }
@@ -411,15 +440,18 @@ int next_token(char *input) {
                 else state = 10; // 123.67
                 break;
 
+
             case 8: // it will jump to the state where we check the digit after E anyway
                 if (ch == '+' || ch =='-')  curr_ch++;
                 state = 9;
                 break;
 
+
             case 9: // we encountered a real number of the form "123.67E(+/-)8"
                 if (ch >= '0' && ch <= '9') { curr_ch++; state = 10; }
                 else token_err(tkn, "Invalid real number format");
                 break;
+
 
             case 10: // this is where we compute CT_REAL
                 if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
@@ -434,6 +466,88 @@ int next_token(char *input) {
                     state = 0;
                 }
                 curr_ch++;
+                break;
+
+
+// ~~~~~~~~ CT_CHAR
+
+            case 11:
+                if (ch == '\\') { curr_ch++; state = 12; }
+                else state = 13;
+                break;
+
+
+            case 12:
+                if(strchr("abfnrtv'?\"\\0", ch)) { curr_ch++; state = 14; }
+                else token_err(tkn, "Expected a character from [abfnrtv'?\"\\\\0]");
+                break;
+
+
+            case 13:
+                if (ch != '\'' || ch != '\\') { curr_ch++; state = 14;}
+                break;
+
+
+            case 14:
+                if(ch == '\''){
+
+                    tkn = add_token(CT_CHAR);
+
+                      char aux[2] = {0};
+                      if ((curr_ch-2)[0] == '\\'){
+                          aux[0] = (curr_ch - 2)[0];
+                          aux[1] = (curr_ch - 2)[1];
+                          aux[2] = '\0';
+                          //printf("%s\n", aux);
+                      }
+                      else if (isalpha((curr_ch-1)[0]))
+                      {
+                          aux[0] = (curr_ch - 1)[0];
+                          aux[1] = '\0';
+                          aux[2] = '\0';
+                          //printf("%s\n", aux);
+                      }
+
+                    tkn->type.text = strdup(aux);
+
+                    curr_ch++;
+                    state = 0;
+                }
+                else token_err(tkn, "Expected character");
+                break;
+
+
+// ~~~~~~~~ COMMENTS AND OTHER SHENANIGANS
+
+            case 20:
+                if(ch == '*') { curr_ch++; state = 21; }
+                else if(ch == '/') { curr_ch++; state = 22; }
+                else { add_token(DIV); state = 0; }
+                break;
+
+
+            case 21:
+                if(ch == '*') { curr_ch++; state = 22; }
+                else {  curr_ch++; }
+                break;
+
+
+            case 22:
+                if(ch == '/') {  curr_ch++; state = 0; }
+                else if(ch == '*') { curr_ch++; }
+                else if (ch != '*' && ch != '/') { curr_ch++; state = 21; }
+                else token_err(tkn, "Error ");
+                break;
+
+
+            case 23:
+                if(ch != '\n' && ch != '\r' && ch != '\0') { curr_ch++; }
+                else if(ch == '\n') {
+                    curr_ch++;
+                    state = 0;
+                    line++;
+                }
+                else { curr_ch++; state = 0; }
                 break;
 
         }
