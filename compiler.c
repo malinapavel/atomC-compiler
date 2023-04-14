@@ -314,8 +314,7 @@ int next_token(char *input) {
                     else add_token(GREATER);
                 }
 
-                else if (ch == ' ' || ch == '\r' || ch == '\t')
-                    curr_ch++; // consume the character and remains in state 0
+                else if (ch == ' ' || ch == '\r' || ch == '\t')   curr_ch++; // consume the character and remains in state 0
 
                 else if (ch == '\n') { // handled separately in order to update the current line
                     line++;
@@ -337,6 +336,7 @@ int next_token(char *input) {
                 else token_err(add_token(END), "Invalid character");
                 break;
 
+
 // ~~~~~~~~ ID
 
             case 1:
@@ -348,17 +348,17 @@ int next_token(char *input) {
             case 2:
                 n_ch = curr_ch - start_ch; // the ID length
                 // keywords tests
-                if      (n_ch == 5 && !memcmp(start_ch, "break", 5))    { tkn = add_token(BREAK); curr_ch++; state = 0; }
-                else if (n_ch == 4 && !memcmp(start_ch, "char", 4))     { tkn = add_token(CHAR); curr_ch++; state = 0; }
-                else if (n_ch == 6 && !memcmp(start_ch, "double", 6))   { tkn = add_token(DOUBLE); curr_ch++; state = 0; }
-                else if (n_ch == 3 && !memcmp(start_ch, "int", 3))      { tkn = add_token(INT); curr_ch++; state = 0; }
-                else if (n_ch == 6 && !memcmp(start_ch, "struct", 6))   { tkn = add_token(STRUCT); curr_ch++; state = 0; }
-                else if (n_ch == 4 && !memcmp(start_ch, "void", 4))     { tkn = add_token(VOID); curr_ch++; state = 0; }
-                else if (n_ch == 2 && !memcmp(start_ch, "if", 2))       { tkn = add_token(IF); curr_ch++; state = 0; }
-                else if (n_ch == 4 && !memcmp(start_ch, "else", 4))     { tkn = add_token(ELSE); curr_ch++; state = 0; }
-                else if (n_ch == 5 && !memcmp(start_ch, "while", 5))    { tkn = add_token(WHILE); curr_ch++; state = 0; }
-                else if (n_ch == 3 && !memcmp(start_ch, "for", 3))      { tkn = add_token(FOR); curr_ch++; state = 0; }
-                else if (n_ch == 6 && !memcmp(start_ch, "return", 6))   { tkn = add_token(RETURN); curr_ch++; state = 0; }
+                if      (n_ch == 5 && !memcmp(start_ch, "break", 5))    { tkn = add_token(BREAK); state = 0; }
+                else if (n_ch == 4 && !memcmp(start_ch, "char", 4))     { tkn = add_token(CHAR); state = 0; }
+                else if (n_ch == 6 && !memcmp(start_ch, "double", 6))   { tkn = add_token(DOUBLE); state = 0; }
+                else if (n_ch == 3 && !memcmp(start_ch, "int", 3))      { tkn = add_token(INT); state = 0; }
+                else if (n_ch == 6 && !memcmp(start_ch, "struct", 6))   { tkn = add_token(STRUCT); state = 0; }
+                else if (n_ch == 4 && !memcmp(start_ch, "void", 4))     { tkn = add_token(VOID); state = 0; }
+                else if (n_ch == 2 && !memcmp(start_ch, "if", 2))       { tkn = add_token(IF); state = 0; }
+                else if (n_ch == 4 && !memcmp(start_ch, "else", 4))     { tkn = add_token(ELSE); state = 0; }
+                else if (n_ch == 5 && !memcmp(start_ch, "while", 5))    { tkn = add_token(WHILE); state = 0; }
+                else if (n_ch == 3 && !memcmp(start_ch, "for", 3))      { tkn = add_token(FOR); state = 0; }
+                else if (n_ch == 6 && !memcmp(start_ch, "return", 6))   { tkn = add_token(RETURN); state = 0; }
 
                 else { // if no keyword, then it sure is an ID
                     tkn = add_token(ID);
@@ -392,9 +392,7 @@ int next_token(char *input) {
                 }
 
                 // handle case where we could have a variable which starts with a number... not acceptable!
-                if (isdigit(start_ch[0]) && ch == '='){
-                    token_err(tkn, "A variable must not start with a number!!");
-                }
+                if (isdigit(start_ch[0]) && ch == '=')  token_err(tkn, "A variable must not start with a number!!");
 
                 // this is where we compute our CT_INTs
                 if (ch == ';' || ch == ',' || ch == ']' || ch == ')'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
@@ -404,10 +402,10 @@ int next_token(char *input) {
                     if (ch == ';') add_token(SEMICOLON);
                     else if (ch == ',') add_token(COMMA);
                     else if (ch == ']') add_token(RBRACKET);
-                    else add_token(RPAR);
+                    else if (ch == ')') add_token(RPAR);
 
                     // if we encounter the format "0x"
-                    if ( (curr_ch - start_ch <= 2) && (start_ch[1] == 'x' || start_ch[1] == 'X') ) token_err(tkn, "Invalid hexadecimal format");
+                    if ( (curr_ch - start_ch <= 2) && (start_ch[1] == 'x' || start_ch[1] == 'X') )  token_err(tkn, "Invalid hexadecimal format");
 
                     state = 0;
                 }
@@ -440,7 +438,7 @@ int next_token(char *input) {
             case 7:
                 if (ch >= '0' && ch <= '9') { curr_ch++; state = 7; }
                 else if (ch == 'e' || ch =='E') { curr_ch++; state = 8; }
-                else state = 10; // 123.67
+                else state = 10; // real numbers like '123.67'
                 break;
 
 
@@ -450,7 +448,7 @@ int next_token(char *input) {
                 break;
 
 
-            case 9: // we encountered a real number of the form "123.67E(+/-)8"
+            case 9: // we encountered a real number of the form '123.67E(+/-)8'
                 if (ch >= '0' && ch <= '9') { curr_ch++; state = 10; }
                 else token_err(tkn, "Invalid real number format");
                 break;
@@ -487,7 +485,7 @@ int next_token(char *input) {
 
 
             case 13:
-                if (ch != '\'' || ch != '\\') { curr_ch++; state = 14;}
+                if (isalnum((ch)) || strchr("~`!@#$%^&*()-_=+{[}]|;:,<.>?/", ch) != 0) { curr_ch++; state = 14;}
                 else token_err(tkn, "Invalid char format");
                 break;
 
@@ -502,14 +500,12 @@ int next_token(char *input) {
                           aux[0] = (curr_ch - 2)[0];
                           aux[1] = (curr_ch - 2)[1];
                           aux[2] = '\0';
-                          //printf("%s\n", aux);
                       }
-                      else if (isalpha((curr_ch-1)[0])) // for 'any_other_character' cases
+                      else if (isalnum(((curr_ch - 1)[0])) || strchr("~`!@#$%^&*()-_=+{[}]|;:,<.>?/", (curr_ch - 1)[0]) != 0) // for 'any_other_character' cases
                       {
                           aux[0] = (curr_ch - 1)[0];
                           aux[1] = '\0';
                           aux[2] = '\0';
-                          //printf("%s\n", aux);
                       }
 
                     tkn->type.text = strdup(aux); // allocate memory for aux string and store it as text for the CT_CHAR token
@@ -541,10 +537,12 @@ int next_token(char *input) {
                 else token_err(tkn, "Invalid char format");
                 break;
 
+
             case 18: // if we still have some characters in the string before reaching the \"
-                if (isalpha(ch)) curr_ch++;
+                if (isalnum((ch)) || strchr("~`!@#$%^&*()-_=+{[}]|;:,<.>?/", ch) != 0) curr_ch++;
                 else state = 19;
                 break;
+
 
             case 19:
                 if(ch == '\"'){ // end of string
@@ -552,7 +550,6 @@ int next_token(char *input) {
                     tkn = add_token(CT_STRING);
 
                     char *aux;
-                    //printf("%s --- %s", start_ch+1, curr_ch);
                     aux = create_string(start_ch + 1, curr_ch);
                     aux[strlen(aux)] = '\0';
                     tkn->type.text = strdup(aux); // allocate memory for aux string and store it as text for the CT_STRING token
@@ -566,35 +563,31 @@ int next_token(char *input) {
 
 // ~~~~~~~~ COMMENTS AND OTHER SHENANIGANS
 
-            case 20:
-                if(ch == '*') { curr_ch++; state = 21; }
-                else if(ch == '/') { curr_ch++; state = 22; }
+            case 20: // check which cases to handle: COMMENT ('/*') goes in state 21, LINECOMMENT ('//') in state 25 or divide operator will be added, otherwise
+                if (ch == '*') { curr_ch++; state = 21; }
+                else if (ch == '/') { curr_ch++; state = 23; }
                 else { add_token(DIV); state = 0; }
                 break;
 
 
-            case 21:
-                if(ch == '*') { curr_ch++; state = 22; }
-                else {  curr_ch++; }
+            case 21: // check whether we have '/**...' or '/*...'
+                if (ch == '*') { curr_ch++; state = 22; } // '/**.....'
+                else if (ch == '\n') { curr_ch++; line++; } // if we have constructions like '/* .... \n .... */', add each line
+                else curr_ch++; // '/*...'
                 break;
 
 
             case 22:
-                if(ch == '/') {  curr_ch++; state = 0; }
-                else if(ch == '*') { curr_ch++; }
-                else if (ch != '*' && ch != '/') { curr_ch++; state = 21; }
-                else token_err(tkn, "Error ");
+                if (ch == '/') { curr_ch++; state = 0; } // end of COMMENT
+                else if (ch == '*')  curr_ch++;
+                else if (isalnum((ch)) || strchr("~`!@#$%^&()-_=+{[}]|;:,<.>? ", ch) != 0) { curr_ch++; state = 21;}
                 break;
 
 
             case 23:
-                if(ch != '\n' && ch != '\r' && ch != '\0') { curr_ch++; }
-                else if(ch == '\n') {
-                    curr_ch++;
-                    state = 0;
-                    line++;
-                }
-                else { curr_ch++; state = 0; }
+                if (ch == '\n') { curr_ch++; state = 0; line++; }
+                else if (ch == '\r' || ch == '\0') { state = 0; }
+                else curr_ch++;
                 break;
 
         }

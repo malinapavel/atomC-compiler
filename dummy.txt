@@ -1,14 +1,22 @@
+//comm 0
 int main(){
 
     int speed=0xAFd9, height = 017, j =0x4;
     double i= 75.32E+02;
-    char x = 'a', y='\n';
-    char aux[10] = "hey";
+    /*char x = 'a', y='\n', z='#';
+    char str[10]="hey";*/
+    char n = 'a';
+    //comm 1
     int arr [ 50];
-    if (!height && arr[0] <= 5 ){
+    if (!height && points[i].y>=0){
         speed= speed / 100;
+    }
+    if(n=='a'){
+    j = j+1;
     }
     while (n!=10){
         height = height+1;
     }
+    //comm2
 }
+//comm3
