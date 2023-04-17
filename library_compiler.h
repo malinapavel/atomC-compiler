@@ -24,13 +24,42 @@ typedef struct _Token {
     struct _Token *next; // link to the next token
 } Token;
 
-
+extern Token *tokens;
 void err(const char *fmt, ...);
 void token_err(const Token *tk, const char *fmt, ...);
 Token *add_token(int code);
 char* create_string(const char* start, const char* end);
 void show_tokens();
 int next_token(char *input);
-
+int consume();
+int unit();
+int decl_struct();
+int decl_var();
+int type_base();
+int array_decl();
+int type_name();
+int decl_func();
+int funct_arg();
+int stm();
+int stm_compound();
+int expr();
+int expr_assign();
+int expr_or();
+void expr_or_1();
+int expr_and();
+void expr_and_1();
+int expr_eq();
+void expr_eq_1();
+int expr_rel();
+void expr_rel_1();
+int expr_add();
+void expr_add_1();
+int expr_mul();
+void expr_mul_1();
+int expr_cast();
+int expr_unary();
+int expr_postfix();
+void expr_postfix_1();
+int expr_primary();
 
 #endif //LABCT_LIBRARY_COMPILER_H

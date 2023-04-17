@@ -61,6 +61,12 @@ build CMakeFiles/LabCT.dir/lexical.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/lexi
   OBJECT_DIR = CMakeFiles\LabCT.dir
   OBJECT_FILE_DIR = CMakeFiles\LabCT.dir
 
+build CMakeFiles/LabCT.dir/syntactical.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/syntactical.c || cmake_object_order_depends_target_LabCT
+  DEP_FILE = CMakeFiles\LabCT.dir\syntactical.c.obj.d
+  FLAGS = -g -fdiagnostics-color=always -std=gnu11
+  OBJECT_DIR = CMakeFiles\LabCT.dir
+  OBJECT_FILE_DIR = CMakeFiles\LabCT.dir
+
 
 # =============================================================================
 # Link build statements for EXECUTABLE target LabCT
@@ -69,7 +75,7 @@ build CMakeFiles/LabCT.dir/lexical.c.obj: C_COMPILER__LabCT_Debug D$:/LabCT/lexi
 #############################################
 # Link the executable LabCT.exe
 
-build LabCT.exe: C_EXECUTABLE_LINKER__LabCT_Debug CMakeFiles/LabCT.dir/main.c.obj CMakeFiles/LabCT.dir/lexical.c.obj
+build LabCT.exe: C_EXECUTABLE_LINKER__LabCT_Debug CMakeFiles/LabCT.dir/main.c.obj CMakeFiles/LabCT.dir/lexical.c.obj CMakeFiles/LabCT.dir/syntactical.c.obj
   FLAGS = -g
   LINK_LIBRARIES = -lkernel32 -luser32 -lgdi32 -lwinspool -lshell32 -lole32 -loleaut32 -luuid -lcomdlg32 -ladvapi32
   OBJECT_DIR = CMakeFiles\LabCT.dir

@@ -39,7 +39,13 @@ int main(int argc, char **argv) {
     else buffer[file_size] = '\0';
 
     //printf("%s", buffer);
-    next_token(buffer);
+    int lexical = next_token(buffer);
+    int syntactical = unit();
+    //printf("unit value: %d \n", syntactical);
+
+    if(lexical !=0 && syntactical != 0){
+        printf("%s\n", "\n~ The code was successfully analyzed!");
+    }
 
 
     if(close(source_fd) < 0){

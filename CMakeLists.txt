@@ -3,4 +3,4 @@ project(LabCT C)
 
 set(CMAKE_C_STANDARD 11)
 
-add_executable(LabCT main.c library_compiler.h lexical.c)
+add_executable(LabCT main.c library_compiler.h lexical.c syntactical.c)

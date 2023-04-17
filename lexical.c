@@ -297,7 +297,7 @@ int next_token(char *input) {
                 else if (ch == '\0') { // the end of the input string
                     add_token(END);
                     show_tokens();
-                    return 0;
+                    return 1;
                 }
 
                 else if (ch >= '0' && ch <= '9') {
