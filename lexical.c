@@ -86,10 +86,10 @@ void show_tokens() {
     int curr_line = 0;
 
 
-    while(current != NULL){
+    while(current != NULL) {
 
         if(curr_line != current->line && strcmp(token_names[current->code], "END") != 0) {
-            printf("~Line #%i\n", current->line);
+            printf("Line #%i\n", current->line);
             curr_line = current->line;
         }
 
@@ -149,9 +149,9 @@ int next_token(char *input) {
 
                     if (ch == '=') {
                         curr_ch++;
-                        add_token(ASSIGN);
+                        add_token(EQUAL);
                     }
-                    else add_token(EQUAL);
+                    else add_token(ASSIGN);
                 }
 
                 else if (ch == '(') {
@@ -296,6 +296,8 @@ int next_token(char *input) {
 
                 else if (ch == '\0') { // the end of the input string
                     add_token(END);
+                    printf("\n~ Lexical analysis tokens\n");
+                    printf("-------------------------\n");
                     show_tokens();
                     return 1;
                 }
@@ -344,21 +346,21 @@ int next_token(char *input) {
 // ~~~~~~~~ CT_INT numbers (+separating them from the HEXA/OCTAL INTs AND CT_REAL NUMBERS)
 
             case 3: // after flushing the first digit
-                if (start_ch[0] == '0'){
+                if (start_ch[0] == '0') {
                     if(ch == 'x' || ch == 'X') { state = 4; curr_ch++; break; } // handle hexadecimal CT_INTs in state 4
                     else if (ch >= '0' && ch <= '7') { state = 5; break; } // handle octal CT_INTs in state 5
                     else if (ch == '8' || ch == '9') token_err(tkn, "Invalid octal format"); // it reached a character from an octal number which happens to start with 8
                     else if (ch == '.') { state = 6; curr_ch++; break; } // if we encounter a real number of the format "0."
                 }
 
-                else if (ch == 'e' || ch =='E'){ // if we encounter a real number of the format "[0-9]+ E (+|-)? [0-9]+" (2E+01, for example)
+                else if (ch == 'e' || ch =='E') { // if we encounter a real number of the format "[0-9]+ E (+|-)? [0-9]+" (2E+01, for example)
                                                  // a CT_REAL case to be handled directly in state 8
                     state = 8;
                     curr_ch++;
                     break;
                 }
 
-                else if (ch == '.'){ // handle CT_REALs in state 6
+                else if (ch == '.') { // handle CT_REALs in state 6
                     state = 6;
                     curr_ch++;
                     break;
@@ -368,8 +370,8 @@ int next_token(char *input) {
                 //if (isdigit(start_ch[0]) && ch == '=')  token_err(tkn, "A variable must not start with a number!!");
 
                 // this is where we compute our CT_INTs
-                if (ch == ';' || ch == ',' || ch == ']' || ch == ')' || ch == '=' || ch == '&' || ch == '|' || ch == '!' || ch == '+' || ch == '-' || ch == '*' || ch == '/'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
-                                                                                    // case when we have an assignment ==
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')' || ch == '=' || ch == '&' || ch == '|' || ch == '!' || ch == '+' || ch == '-' || ch == '*' || ch == '/') { // reached the end of number ; build the number and add the ending tokens ; , ] )
+                                                                                    // case when we have an ==
                     tkn = add_token(CT_INT);
                     tkn->type.i = strtol(start_ch, NULL,0);
 
@@ -381,19 +383,23 @@ int next_token(char *input) {
                     else if (ch == '-') add_token(SUB);
                     else if (ch == '*') add_token(MUL);
                     else if (ch == '/') add_token(DIV);
-                    else if (ch == '='){
+                    else if (ch == '=') {
                         curr_ch++;
-                        if (curr_ch[0] == '=') add_token(ASSIGN);
+                        if (curr_ch[0] == '=') add_token(EQUAL);
+                        else { // in case we have something like 3=8
+                            add_token(ASSIGN);
+                            curr_ch--;
+                        }
                     }
-                    else if (ch == '&'){
+                    else if (ch == '&') {
                         curr_ch++;
                         if (curr_ch[0] == '&') add_token(AND);
                     }
-                    else if (ch == '|'){
+                    else if (ch == '|') {
                         curr_ch++;
                         if (curr_ch[0] == '|') add_token(OR);
                     }
-                    else if (ch == '!'){
+                    else if (ch == '!') {
                         curr_ch++;
                         if (curr_ch[0] == '=') add_token(NOTEQ);
                     }
@@ -451,7 +457,7 @@ int next_token(char *input) {
 
 
             case 10: // this is where we compute CT_REAL
-                if (ch == ';' || ch == ',' || ch == ']' || ch == ')' || ch == '=' || ch == '&' || ch == '|' || ch == '!' || ch == '+' || ch == '-' || ch == '*' || ch == '/'){ // reached the end of number ; build the number and add the ending tokens ; , ] )
+                if (ch == ';' || ch == ',' || ch == ']' || ch == ')' || ch == '=' || ch == '&' || ch == '|' || ch == '!' || ch == '+' || ch == '-' || ch == '*' || ch == '/') { // reached the end of number ; build the number and add the ending tokens ; , ] )
                     tkn = add_token(CT_REAL);
                     tkn->type.r = strtod(start_ch, NULL);
 
@@ -463,19 +469,23 @@ int next_token(char *input) {
                     else if (ch == '-') add_token(SUB);
                     else if (ch == '*') add_token(MUL);
                     else if (ch == '/') add_token(DIV);
-                    else if (ch == '='){
+                    else if (ch == '=') {
                         curr_ch++;
-                        if (curr_ch[0] == '=') add_token(ASSIGN);
+                        if (curr_ch[0] == '=') add_token(EQUAL);
+                        else { // in case we have something like 3.0=8
+                            add_token(ASSIGN);
+                            curr_ch--;
+                        }
                     }
-                    else if (ch == '&'){
+                    else if (ch == '&') {
                         curr_ch++;
                         if (curr_ch[0] == '&') add_token(AND);
                     }
-                    else if (ch == '|'){
+                    else if (ch == '|') {
                         curr_ch++;
                         if (curr_ch[0] == '|') add_token(OR);
                     }
-                    else if (ch == '!'){
+                    else if (ch == '!') {
                         curr_ch++;
                         if (curr_ch[0] == '=') add_token(NOTEQ);
                     }
@@ -507,7 +517,7 @@ int next_token(char *input) {
 
 
             case 14:
-                if(ch == '\''){ // end of character
+                if(ch == '\'') { // end of character
 
                     tkn = add_token(CT_CHAR);
 
@@ -561,7 +571,7 @@ int next_token(char *input) {
 
 
             case 19:
-                if(ch == '\"'){ // end of string
+                if(ch == '\"') { // end of string
 
                     tkn = add_token(CT_STRING);
 
