@@ -63,9 +63,9 @@ typedef union{
 } CtVal;
 typedef struct{
     Type type; // type of the result
-    int isLVal; // if it is a LVal
-    int isCtVal; // if it is a constant value (int, real, char, char[])
-    CtVal ctVal; // the constat value
+    int is_lval; // if it is a LVal
+    int is_ctval; // if it is a constant value (int, real, char, char[])
+    CtVal ctval; // the constat value
 } RetVal;
 
 
@@ -112,10 +112,6 @@ Symbol *add_symbol(Symbols *symbols, const char *name, int cls);
 Symbol *find_symbol(Symbols *symbols, const char *name);
 void add_var(Token *tkName, Type *t);
 void delete_symbols_after(Symbols *symbols, Symbol *symbol);
-void show_type(Type *ret);
-void show_symbol(Symbol *s, int level);
-void show_symbols(Symbols *symbols, int level);
-void print_symbol_table(Symbols *symbols);
 Type create_type(int type_base, int n_elements);
 void cast(Type *dst,Type *src);
 Type get_arith_type(Type *s1, Type *s2);

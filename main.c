@@ -6,14 +6,14 @@
 
 int main(int argc, char **argv) {
 
-    if (argc != 2){
+    if (argc != 2) {
         printf("Please provide a file name");
         exit(-1);
     }
 
 
     int source_fd = open(argv[1], O_RDONLY);
-    if (source_fd < 0){
+    if (source_fd < 0) {
         printf("Could not open file");
         exit(-1);
     }
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 
     struct stat st;
     int file_size;
-    if(stat(argv[1], &st)){
+    if(stat(argv[1], &st)) {
         printf("Could not process file stats");
         exit(-1);
     }
@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
 
     char buffer[file_size * sizeof(char) - 1];
     int bytes_read;
-    if( (bytes_read = read(source_fd, buffer, file_size * sizeof(char))) < 0 ){
+    if( (bytes_read = read(source_fd, buffer, file_size * sizeof(char))) < 0 ) {
         printf("Could not read file contents");
         exit(-1);
     }
@@ -38,17 +38,16 @@ int main(int argc, char **argv) {
     if(bytes_read < file_size)  buffer[bytes_read] = '\0';
     else buffer[file_size] = '\0';
 
-    //printf("%s", buffer);
-    int lexical = next_token(buffer);
-    int syntactical = unit();
-    //printf("unit value: %d \n", syntactical);
 
-    if(lexical !=0 && syntactical != 0){
-        printf("%s\n", "\n~ The code was successfully analyzed!");
+    int lexical = next_token(buffer);
+    int synt_sem = unit();
+
+    if(lexical != 0 && synt_sem != 0) {
+        printf("%s\n", "\n~ The code has compiled successfully!");
     }
 
 
-    if(close(source_fd) < 0){
+    if(close(source_fd) < 0) {
         printf("Could not close file");
         exit(-1);
     }

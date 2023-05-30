@@ -35,33 +35,29 @@ int unit() {
 
     init_symbols(&symbols);
 
+    // external functions added at the header of symbolic table
     s = add_ext_func("put_s",create_type(TB_VOID,-1));
-    a = add_symbol(&s->args,"s",CLS_VAR);
-    a->type = create_type(TB_CHAR,0);
+    add_func_arg(s,"s",create_type(TB_CHAR,0));
 
     s = add_ext_func("get_s",create_type(TB_VOID,-1));
-    a = add_symbol(&s->args,"s",CLS_VAR);
-    a->type = create_type(TB_CHAR,0);
 
     s = add_ext_func("put_i",create_type(TB_VOID,-1));
-    a = add_symbol(&s->args,"i",CLS_VAR);
-    a->type = create_type(TB_INT,-1);
+    add_func_arg(s,"i",create_type(TB_INT,-1));
 
     s = add_ext_func("get_i",create_type(TB_INT,-1));
 
     s = add_ext_func("put_d",create_type(TB_VOID,-1));
-    a = add_symbol(&s->args,"d",CLS_VAR);
-    a->type = create_type(TB_DOUBLE,-1);
+    add_func_arg(s,"d",create_type(TB_DOUBLE,-1));
 
     s = add_ext_func("get_d",create_type(TB_DOUBLE,-1));
 
     s = add_ext_func("put_c",create_type(TB_VOID,-1));
-    a = add_symbol(&s->args,"c",CLS_VAR);
-    a->type = create_type(TB_CHAR,-1);
+    add_func_arg(s,"c",create_type(TB_CHAR,-1));
 
     s = add_ext_func("get_c",create_type(TB_CHAR,-1));
 
     s = add_ext_func("seconds",create_type(TB_DOUBLE,-1));
+
 
 
     while(1) {
@@ -70,12 +66,7 @@ int unit() {
         else if(decl_var()) { }
         else break;
     }
-    if(consume(END)) {
-//        printf("\n\n\n~Domain analysis table\n");
-//        printf("----------------------");
-//        print_symbol_table(&symbols);
-        return 1;
-    }
+    if(consume(END))   return 1;
     else token_err(curr_tkn, "Missing END token!");
 
     return 0;
@@ -90,7 +81,6 @@ int decl_struct() {
     Token *tkn_name;
 
     if(consume(STRUCT)) {
-        //Token *tkn_name = curr_tkn; // store the currTkn (in this case, the ID) into the tkName
         if(consume(ID)) {
             tkn_name = consumed_tkn; // store the consumed token (in this case, the ID) into the tkName
             if(consume(LACC)) {
@@ -124,14 +114,12 @@ int decl_var() {
     Type t;
 
     if(type_base(&t)) {
-        //tkn_name = curr_tkn;
         if(consume(ID)) {
             tkn_name = consumed_tkn;
             if(!array_decl(&t))  t.n_elements = -1;
             add_var(tkn_name, &t);
             while(1) {
                 if(consume(COMMA)) {
-                    //tkn_name = curr_tkn;
                     if (consume(ID)) {
                         tkn_name = consumed_tkn;
                         if(!array_decl(&t))  t.n_elements = -1;
@@ -160,7 +148,6 @@ int type_base(Type *ret) {
     if(consume(DOUBLE)) { ret->type_base = TB_DOUBLE; return 1; }
     if(consume(CHAR))   { ret->type_base  = TB_CHAR;  return 1; }
     if(consume(STRUCT)) {
-        //Token *tkn_name = curr_tkn;
         if(consume(ID)) {
             tkn_name = consumed_tkn;
             Symbol *s = find_symbol(&symbols,tkn_name->type.text);
@@ -187,9 +174,9 @@ int array_decl(Type *ret) {
 
     if(consume(LBRACKET)) {
         if(expr(&rv)) {
-            if(!rv.isCtVal)  token_err(curr_tkn,"The array size is not a constant!");
+            if(!rv.is_ctval)  token_err(curr_tkn, "The array size is not a constant!");
             if(rv.type.type_base != TB_INT)   token_err(curr_tkn,"The array size is not an integer!");
-            ret->n_elements = rv.ctVal.i;
+            ret->n_elements = rv.ctval.i;
         }
         else ret->n_elements = 0;
         if(consume(RBRACKET))  return 1;
@@ -222,7 +209,6 @@ int decl_func() {
     if(type_base(&t)) {
         if(consume(MUL))   t.n_elements = 0;
         else t.n_elements = -1;
-        //tkn_name = curr_tkn;
         if(consume(ID)) {
             tkn_name = consumed_tkn;
             if(consume(LPAR)) {
@@ -253,7 +239,6 @@ int decl_func() {
 
     if (consume(VOID)) {
         t.type_base = TB_VOID;
-        //tkn_name = curr_tkn;
         if(consume(ID)) {
             tkn_name = consumed_tkn;
             if(consume(LPAR)) {
@@ -296,7 +281,6 @@ int funct_arg() {
     Token *tkn_name;
 
     if(type_base(&t)) {
-        //tkn_name = curr_tkn;
         if(consume(ID)) {
             tkn_name = consumed_tkn;
             if(!array_decl(&t))   t.n_elements = -1;
@@ -427,8 +411,6 @@ int stm_compound() {
 int expr(RetVal *rv) {
 
     if(expr_assign(rv)) return 1;
-
-    //curr_tkn = curr_tkn->next;
     return 0;
 
 }
@@ -443,13 +425,12 @@ int expr_assign(RetVal *rv) {
     if(expr_unary(rv)) {
         if (consume(ASSIGN)) {
             if (expr_assign(&rve)) {
-                if(!rv->isLVal)  token_err(curr_tkn,"Cannot assign to a non-lval!");
+                if(!rv->is_lval)  token_err(curr_tkn, "Cannot assign to a non-lval!");
                 if(rv->type.n_elements > -1 || rve.type.n_elements > -1)  token_err(curr_tkn,"The arrays cannot be assigned!");
                 cast(&rv->type,&rve.type);
-                rv->isCtVal = rv->isLVal = 0;
+                rv->is_ctval = rv->is_lval = 0;
                 return 1;
             }
-            //else token_err(curr_tkn, "Expected assign in expression");
         }
         else{
             curr_tkn = start_tkn;
@@ -492,7 +473,7 @@ int expr_or_1(RetVal *rv) {
         if(expr_and(&rve)) {
             if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be logically tested!");
             rv->type = create_type(TB_INT, -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_or_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing AND after OR!");
@@ -529,7 +510,7 @@ int expr_and_1(RetVal *rv) {
         if(expr_eq(&rve)) {
             if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT) token_err(curr_tkn,"A structure cannot be logically tested");
             rv->type = create_type(TB_INT, -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_and_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing equality expression after AND!");
@@ -568,7 +549,7 @@ int expr_eq_1(RetVal *rv) {
         if (expr_rel(&rve)) {
             if(rv->type.type_base == TB_STRUCT||rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be logically tested");
             rv->type = create_type(TB_INT, -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_eq_1(rv)) return 1;
         } else token_err(curr_tkn, "Missing relationship expression after EQUAL!");
@@ -578,7 +559,7 @@ int expr_eq_1(RetVal *rv) {
         if (expr_rel(&rve)) {
             if(rv->type.type_base == TB_STRUCT||rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be logically tested");
             rv->type = create_type(TB_INT, -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_eq_1(rv)) return 1;
         }
@@ -617,9 +598,9 @@ int expr_rel_1(RetVal *rv) {
         tkn_op = consumed_tkn;
         if(expr_add(&rve)) {
             if(rv->type.n_elements >- 1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be compared!");
-            if(rv->type.type_base == TB_STRUCT||rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
+            if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
             rv->type = create_type(TB_INT,  -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_rel_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing addition expression after LESS!");
@@ -628,9 +609,9 @@ int expr_rel_1(RetVal *rv) {
         tkn_op = consumed_tkn;
         if(expr_add(&rve)) {
             if(rv->type.n_elements >- 1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be compared!");
-            if(rv->type.type_base == TB_STRUCT||rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
+            if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
             rv->type = create_type(TB_INT,  -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_rel_1(rv))  return 1;
         } else token_err(curr_tkn,"Missing addition expression after LESSEQ!");
@@ -639,9 +620,9 @@ int expr_rel_1(RetVal *rv) {
         tkn_op = consumed_tkn;
         if(expr_add(&rve)) {
             if(rv->type.n_elements >- 1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be compared!");
-            if(rv->type.type_base == TB_STRUCT||rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
+            if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
             rv->type = create_type(TB_INT,  -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_rel_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing addition expression after GREATER!");
@@ -650,9 +631,9 @@ int expr_rel_1(RetVal *rv) {
         tkn_op = consumed_tkn;
         if(expr_add(&rve)) {
             if(rv->type.n_elements >- 1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be compared!");
-            if(rv->type.type_base == TB_STRUCT||rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
+            if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be compared!");
             rv->type = create_type(TB_INT,  -1);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_rel_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing addition expression after GREATEREQ!");
@@ -692,7 +673,7 @@ int expr_add_1(RetVal *rv) {
             if(rv->type.n_elements > -1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be added or subtracted!");
             if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be added or subtracted!");
             rv->type = get_arith_type(&rv->type,&rve.type);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_add_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing multiplier expression after ADD!");
@@ -703,7 +684,7 @@ int expr_add_1(RetVal *rv) {
             if(rv->type.n_elements > -1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be added or subtracted!");
             if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be added or subtracted!");
             rv->type = get_arith_type(&rv->type,&rve.type);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_add_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing multiplier expression after SUB!");
@@ -741,7 +722,7 @@ int expr_mul_1(RetVal *rv) {
             if(rv->type.n_elements > -1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be multiplied or divided!");
             if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be multiplied or divided!");
             rv->type = get_arith_type(&rv->type,&rve.type);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_mul_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing casting expression after MUL!");
@@ -752,7 +733,7 @@ int expr_mul_1(RetVal *rv) {
             if(rv->type.n_elements > -1 || rve.type.n_elements > -1)  token_err(curr_tkn,"An array cannot be multiplied or divided!");
             if(rv->type.type_base == TB_STRUCT || rve.type.type_base == TB_STRUCT)  token_err(curr_tkn,"A structure cannot be multiplied or divided!");
             rv->type = get_arith_type(&rv->type,&rve.type);
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
 
             if(expr_mul_1(rv)) return 1;
         } else token_err(curr_tkn,"Missing casting expression after DIV!");
@@ -776,7 +757,7 @@ int expr_cast(RetVal *rv){
                 if(expr_cast(&rve)) {
                     cast(&t,&rve.type);
                     rv->type = t;
-                    rv->isCtVal = rv->isLVal=0;
+                    rv->is_ctval = rv->is_lval=0;
                     return 1;
                 }
             } else token_err(curr_tkn,"Missing \")\" in casting expression!");
@@ -804,7 +785,7 @@ int expr_unary(RetVal *rv) {
                 if(rv->type.type_base == TB_STRUCT)  token_err(curr_tkn,"Unary '-' cannot be applied to a struct!");
 
             }
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
             return 1;
         } else token_err(curr_tkn,"Missing unary expression after SUB!");
     }
@@ -815,7 +796,7 @@ int expr_unary(RetVal *rv) {
                 if (rv->type.type_base == TB_STRUCT) token_err(curr_tkn, "\"!\" cannot be applied to a struct!");
                 rv->type = create_type(TB_INT, -1);
             }
-            rv->isCtVal = rv->isLVal = 0;
+            rv->is_ctval = rv->is_lval = 0;
             return 1;
         } else token_err(curr_tkn,"Missing unary expression after NOT!");
     }
@@ -857,23 +838,22 @@ int expr_postfix_1(RetVal *rv) {
             cast(&type_int,&rve.type);
             rv->type = rv->type;
             rv->type.n_elements = -1;
-            rv->isLVal = 1;
-            rv->isCtVal = 0;
+            rv->is_lval = 1;
+            rv->is_ctval = 0;
             if(consume(RBRACKET)) {
                 if(expr_postfix_1(rv)) return 1;
             } else token_err(curr_tkn,"Missing right bracket after expression!");
         } else token_err(curr_tkn,"Missing expression in the postfix expression!");
     }
     if(consume(DOT)) {
-        //tkn_name = curr_tkn;
         if (consume(ID)) {
             tkn_name = consumed_tkn;
-            Symbol *sStruct = rv->type.s;
-            Symbol *sMember = find_symbol(&sStruct->members, tkn_name->type.text);
-            if(!sMember)  token_err(curr_tkn,"Struct %s does not have a member %s",sStruct->name, tkn_name->type.text);
-            rv->type=sMember->type;
-            rv->isLVal=1;
-            rv->isCtVal=0;
+            Symbol *s_struct = rv->type.s;
+            Symbol *s_member = find_symbol(&s_struct->members, tkn_name->type.text);
+            if(!s_member)  token_err(curr_tkn, "Struct %s does not have a member %s", s_struct->name, tkn_name->type.text);
+            rv->type = s_member->type;
+            rv->is_lval = 1;
+            rv->is_ctval = 0;
 
             if (expr_postfix_1(rv)) return 1;
         } else token_err(curr_tkn, "Missing ID after dot in the postfix expression!");
@@ -895,30 +875,30 @@ int expr_primary(RetVal *rv) {
     if(consume(ID)) {
         Symbol *s = find_symbol(&symbols, tkn_name->type.text);
         if(!s)  token_err(curr_tkn,"Undefined symbol %s", tkn_name->type.text);
-        rv->type=s->type;
-        rv->isCtVal=0;
-        rv->isLVal=1;
+        rv->type = s->type;
+        rv->is_ctval = 0;
+        rv->is_lval = 1;
         if(consume(LPAR)) {
-            Symbol **crtDefArg = s->args.begin;
+            Symbol **crt_def_arg = s->args.begin;
             if(s->cls != CLS_FUNC && s->cls != CLS_EXTFUNC)  token_err(curr_tkn,"Call of the non-function %s", tkn_name->type.text);
             if(expr(&arg)) {
-                if(crtDefArg == s->args.end)  token_err(curr_tkn,"Too many arguments in call!");
-                cast(&(*crtDefArg)->type,&arg.type);
-                crtDefArg++;
+                if(crt_def_arg == s->args.end)  token_err(curr_tkn, "Too many arguments in call!");
+                cast(&(*crt_def_arg)->type, &arg.type);
+                crt_def_arg++;
                 while(1) {
                     if(consume(COMMA)) {
                         if(expr(&arg)) {
-                            if(crtDefArg == s->args.end)  token_err(curr_tkn,"Too many arguments in call!");
-                            cast(&(*crtDefArg)->type,&arg.type);
-                            crtDefArg++;
+                            if(crt_def_arg == s->args.end)  token_err(curr_tkn, "Too many arguments in call!");
+                            cast(&(*crt_def_arg)->type, &arg.type);
+                            crt_def_arg++;
                         } else token_err(curr_tkn,"Expected expr after COMMA in the primary expression!");
                     } else break;
                 }
             }
             if(consume(RPAR)) {
-                if(crtDefArg != s->args.end)  token_err(curr_tkn,"Too few arguments in call!");
+                if(crt_def_arg != s->args.end)  token_err(curr_tkn, "Too few arguments in call!");
                 rv->type = s->type;
-                rv->isCtVal = rv->isLVal = 0;
+                rv->is_ctval = rv->is_lval = 0;
                 return 1;
             }
             else token_err(curr_tkn,"Missing \")\" in the primary expression!");
@@ -929,33 +909,33 @@ int expr_primary(RetVal *rv) {
     if(consume(CT_INT)) {
         tkn_i = consumed_tkn;
         rv->type = create_type(TB_INT, -1);
-        rv->ctVal.i = tkn_i->type.i;
-        rv->isCtVal = 1;
-        rv->isLVal = 0;
+        rv->ctval.i = tkn_i->type.i;
+        rv->is_ctval = 1;
+        rv->is_lval = 0;
         return 1;
     }
     if(consume(CT_REAL)) {
         tkn_r = consumed_tkn;
         rv->type = create_type(TB_DOUBLE,-1);
-        rv->ctVal.d = tkn_r->type.r;
-        rv->isCtVal = 1;
-        rv->isLVal = 0;
+        rv->ctval.d = tkn_r->type.r;
+        rv->is_ctval = 1;
+        rv->is_lval = 0;
         return 1;
     }
     if(consume(CT_CHAR)) {
         tkn_c = consumed_tkn;
         rv->type = create_type(TB_CHAR,-1);
-        rv->ctVal.i = tkn_c->type.i;
-        rv->isCtVal = 1;
-        rv->isLVal = 0;
+        rv->ctval.i = tkn_c->type.i;
+        rv->is_ctval = 1;
+        rv->is_lval = 0;
         return 1;
     }
     if(consume(CT_STRING)) {
         tkn_s = consumed_tkn;
         rv->type = create_type(TB_CHAR,0);
-        rv->ctVal.str = tkn_s->type.text;
-        rv->isCtVal = 1;
-        rv->isLVal = 0;
+        rv->ctval.str = tkn_s->type.text;
+        rv->is_ctval = 1;
+        rv->is_lval = 0;
         return 1;
     }
     if(consume(LPAR)) {
@@ -974,7 +954,7 @@ int expr_primary(RetVal *rv) {
 
 
 
-// ~~~~~~~~ DOMAIN ANALYSIS
+// ~~~~~~~~ DOMAIN ANALYSIS FUNCTIONS
 
 void init_symbols(Symbols *symbols) {
 
@@ -1016,8 +996,7 @@ Symbol *add_symbol(Symbols *symbols, const char *name, int cls) {
 
 Symbol *find_symbol(Symbols *symbols, const char *name) {
 
-    int size = symbols->end - symbols->begin;
-    size--;
+    int size = symbols->end - symbols->begin - 1;
 
     while(size >= 0) {
         if(strcmp(symbols->begin[size]->name, name) == 0)   return symbols->begin[size];
@@ -1057,13 +1036,18 @@ void add_var(Token *tkName,Type *t) {
 
 void delete_symbols_after(Symbols *symbols, Symbol *symbol) {
 
-    int counter, size = symbols->end - symbols->begin;
-    int found = size;
+    int size = symbols->end - symbols->begin;
+    int found;
 
-    for(counter = 0; counter < size ; counter++) {
-        if((symbols->begin[counter]) == symbol) {
-            found = counter;
-            for(counter++; counter < size; counter++) { free(symbols->begin[counter]); }
+
+    for(int cnt = 0; cnt < size ; cnt++) {
+        if(symbols->begin[cnt] == symbol) {
+            found = cnt;
+            cnt++;
+            while(cnt < size)   {
+                free(symbols->begin[cnt]);
+                cnt++;
+            }
             symbols->end = symbols->begin + found + 1;
         }
     }
@@ -1074,7 +1058,7 @@ void delete_symbols_after(Symbols *symbols, Symbol *symbol) {
 
 
 
-// ~~~~~~~~ TYPE ANALYSIS
+// ~~~~~~~~ TYPE ANALYSIS FUNCTIONS
 
 Type create_type(int type_base, int n_elements) {
 
@@ -1148,65 +1132,6 @@ Symbol *add_func_arg(Symbol *func, const char *name, Type type) {
     return a;
 
 }
-
-
-
-
-
-void show_type(Type *ret){
-
-    switch(ret->type_base){
-        case TB_INT: { printf("int "); break; }
-        case TB_DOUBLE: { printf("double "); break; }
-        case TB_CHAR: { printf("char "); break; }
-        case TB_VOID: { printf("void "); break; }
-        case TB_STRUCT: { printf("struct %s", ret->s->name); break; }
-    }
-
-}
-
-
-
-//void show_symbol(Symbol *s, int level) {
-//
-//    int c = level;
-//    printf("\n");
-//    while(c != 0) { printf(" "); c--; }
-//
-//    printf("%s ", s->name);
-//    switch(s->cls) {
-//        case CLS_VAR:
-//            show_type(&(s->type));
-//            break;
-//        case CLS_FUNC:
-//        case CLS_EXTFUNC:
-//            show_type(&(s->type));
-//            show_symbols(&(s->args), level);
-//            break;
-//        case CLS_STRUCT:
-//            printf("struct ");
-//            show_symbols(&(s->members), level);
-//            break;
-//    }
-//
-//}
-//
-//void show_symbols(Symbols *symbols, int level) {
-//
-//    int size = symbols->end - symbols->begin, count;
-//
-//    for(count = 0; count < size; count++){
-//        show_symbol(symbols->begin[count], level+1);
-//    }
-//
-//}
-//
-//void print_symbol_table(Symbols *symbols) {
-//
-//    show_symbols(symbols, 0);
-//    printf("\nDone\n");
-//
-//}
 
 
 
